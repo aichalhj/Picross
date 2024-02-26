@@ -13,3 +13,5 @@ creer_grille <- function(n_lignes, n_colonnes) {
   return(grille)
 }
 
+
+
