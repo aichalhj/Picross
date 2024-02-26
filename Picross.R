@@ -3,29 +3,23 @@ library(ggplot2)
 
 # Fonction pour créer une grille Picross avec indices
 creer_grille_picross <- function(taille, puzzle) {
-
-  # Indices pour les lignes
   indices_lignes <- apply(puzzle, 1, function(row) {
-    runs <- rle(row)$lengths
-    runs <- runs[runs > 1]  # Ne pas inclure les cases vides
-    if (length(runs) == 0) return("")
-    else return(paste(runs, collapse = " "))
+    paste(rle(row)$lengths[rle(row)$values == 1], collapse = " ")
   })
 
-  # Indices pour les colonnes
   indices_colonnes <- apply(puzzle, 2, function(col) {
-    runs <- rle(col)$lengths
-    runs <- runs[runs > 1]  # Ne pas inclure les cases vides
-    if (length(runs) == 0) return("")
-    else return(paste(runs, collapse = " "))
+    paste(rle(col)$lengths[rle(col)$values == 1], collapse = " ")
   })
 
-  # Créer le graphique avec les indices
   ggplot() +
     geom_tile(aes(x = rep(1:taille, each = taille),
                   y = rep(taille:1, times = taille),
                   fill = factor(puzzle)),
               color = "white", size = 1) +
+    geom_text(aes(x = 0, y = taille:1, label = indices_lignes),
+              hjust = 1.1, vjust = 0.5, size = 4, color = "black") +
+    geom_text(aes(x = 1:taille, y = 0, label = indices_colonnes),
+              hjust = 0.5, vjust = -0.5, size = 4, color = "black") +
     scale_fill_manual(values = c("white", "black"),
                       name = "Case",
                       labels = c("Blanc", "Noir")) +
@@ -37,17 +31,8 @@ creer_grille_picross <- function(taille, puzzle) {
           panel.grid = element_blank(),
           legend.text = element_text(size = 12),
           legend.title = element_text(size = 14, face = "bold"),
-          plot.margin = unit(c(1, 1, 1, 1), "cm")) +
-
-    # Ajouter les indices pour les lignes
-    geom_text(aes(x = 0, y = taille:1, label = indices_lignes),
-              hjust = 0, size = 4, color = "black") +
-
-    # Ajouter les indices pour les colonnes
-    geom_text(aes(x = 1:taille, y = 0, label = indices_colonnes),
-              vjust = 1, size = 4, color = "black")
+          plot.margin = unit(c(1, 1, 1, 1), "cm"))
 }
-
 
 # Définition de l'interface Shiny
 ui <- fluidPage(
