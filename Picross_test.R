@@ -1,17 +1,29 @@
 library(shiny)
 library(ggplot2)
 
-# Fonction pour créer une grille Picross
+# Fonction pour créer une grille Picross avec indices
 creer_grille_picross <- function(taille, puzzle) {
+  indices_lignes <- apply(puzzle, 1, function(row) {
+    paste(rle(row)$lengths[rle(row)$values == 1], collapse = " ")
+  })
+
+  indices_colonnes <- apply(puzzle, 2, function(col) {
+    paste(rle(col)$lengths[rle(col)$values == 1], collapse = " ")
+  })
+
   ggplot() +
     geom_tile(aes(x = rep(1:taille, each = taille),
                   y = rep(taille:1, times = taille),
                   fill = factor(puzzle)),
               color = "white", size = 1) +
+    geom_text(aes(x = 0, y = taille:1, label = indices_lignes),
+              hjust = 1.1, vjust = 0.5, size = 4, color = "black") +
+    geom_text(aes(x = 1:taille, y = 0, label = indices_colonnes),
+              hjust = 0.5, vjust = -0.5, size = 4, color = "black", angle = 90) +
     scale_fill_manual(values = c("white", "black"),
                       name = "Case",
                       labels = c("Blanc", "Noir")) +
-    theme_void() +
+    coord_fixed(ratio = 1) + theme_void() +
     theme(legend.position = "bottom",
           plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
           axis.text = element_blank(),
@@ -42,7 +54,7 @@ server <- function(input, output) {
     puzzle <- matrix(sample(0:1, input$taille^2, replace = TRUE),
                      nrow = input$taille, ncol = input$taille)
 
-    # Créer et afficher la grille Picross
+    # Créer et afficher la grille Picross avec indices
     creer_grille_picross(input$taille, puzzle)
   })
 }

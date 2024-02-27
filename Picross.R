@@ -23,7 +23,7 @@ creer_grille_picross <- function(taille, puzzle) {
     scale_fill_manual(values = c("white", "black"),
                       name = "Case",
                       labels = c("Blanc", "Noir")) +
-    theme_void() +
+    coord_fixed(ratio = 1) + theme_void() +
     theme(legend.position = "bottom",
           plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
           axis.text = element_blank(),
