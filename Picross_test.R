@@ -1,7 +1,6 @@
 library(shiny)
 library(ggplot2)
 
-
 ui <- fluidPage(
   titlePanel("Picross Game"),
 
@@ -9,7 +8,17 @@ ui <- fluidPage(
   sliderInput("gridSize", "Taille de la Grille", min = 5, max = 10, value = 5),
 
   # Grille de jeu Picross
-  uiOutput("picrossGrid")
+  uiOutput("picrossGrid"),
+
+  # Ajouter le code CSS personnalisé pour définir la largeur et la hauteur des boutons
+  tags$head(
+    tags$style(HTML("
+      .square-button {
+        width: 50px;
+        height: 50px;
+      }
+    "))
+  )
 )
 
 server <- function(input, output) {
@@ -24,8 +33,9 @@ server <- function(input, output) {
         actionButton(
           inputId = paste0("cell", i),
           label = "",
-          width = 50,  # Largeur fixe pour chaque bouton
-          height = 50  # Hauteur fixe pour chaque bouton
+          class = "square-button",  # Ajouter la classe CSS
+          width = 50,
+          height = 50
         )
       }),
       nrow = gridSize,
