@@ -1,4 +1,3 @@
-library(ggplot2)
 library(shiny)
 
 # Fonction pour générer aléatoirement une grille de 0 et 1
@@ -6,30 +5,14 @@ generer_grille_aleatoire <- function(taille) {
   matrix(rbinom(taille^2, 1, 0.5), nrow = taille)
 }
 
-# Fonction pour calculer les indices de colonnes
-calculer_indices_colonnes <- function(grille) {
-  nb_colonnes = ncol(grille)
-  indices_colonnes = rep("", nb_colonnes)
-  
-  for (j in 1:nb_colonnes) {
-    col = grille[, j]
-    indices <- rle(col)$lengths[col == 1]
-    indices_colonnes[j] <- paste(indices[indices > 0], collapse = " ")
+# Fonction pour obtenir les indices d'une ligne donnée
+obtenir_indices_ligne <- function(ligne) {
+  consecutive_ones <- rle(ligne)$lengths[rle(ligne)$values == 1]
+  if (length(consecutive_ones) == 0) {
+    return(NULL)
+  } else {
+    return(consecutive_ones)
   }
-  
-  return(indices_colonnes)
-}
-
-# Fonction pour créer une grille Picross avec indices
-creer_grille_picross <- function(grille) {
-  indices_lignes <- apply(grille, 1, function(row) {
-    indices <- rle(row)$lengths[row == 1]
-    paste(indices[indices > 0], collapse = " ")
-  })
-  
-  indices_colonnes <- calculer_indices_colonnes(grille)
-  
-  list(indices_lignes = indices_lignes, indices_colonnes = indices_colonnes)
 }
 
 ui <- fluidPage(
@@ -41,8 +24,11 @@ ui <- fluidPage(
   # Bouton pour générer une nouvelle grille
   actionButton("generateButton", "Générer une nouvelle grille"),
   
-  # Grille de jeu Picross et indices
+  # Grille de jeu Picross
   uiOutput("picrossGrid"),
+  
+  # Indices des lignes
+  uiOutput("ligneIndices"),
   
   # Tableau pour afficher la matrice de 0 et 1
   tableOutput("grille01"),
@@ -51,13 +37,10 @@ ui <- fluidPage(
   tags$head(
     tags$style(HTML("
       .square-button {
-        width: 50px;
-        height: 50px;
-        margin: 2px;
-      }
-      .indices {
-        font-size: 18px;
-        text-align: center;
+        width: 30px;
+        height: 30px;
+        margin: 0px;
+        font-size: 8px;
       }
     "))
   )
@@ -71,48 +54,66 @@ server <- function(input, output) {
     # Générer une nouvelle grille de 0 et 1
     nouvelle_grille <- generer_grille_aleatoire(input$gridSize)
     
-    # Calculer les indices
-    indices <- creer_grille_picross(nouvelle_grille)
-    
     # Stocker les données dans la reactiveVal
     picrossGridData(list(
-      picrossMatrix = nouvelle_grille,
-      indices_lignes = indices$indices_lignes,
-      indices_colonnes = indices$indices_colonnes
+      picrossMatrix = nouvelle_grille
     ))
   })
   
-  # Afficher la grille de jeu Picross et les indices
+  # Afficher la grille de jeu Picross
   output$picrossGrid <- renderUI({
     picrossGridDataValue <- picrossGridData()
     
     if (is.null(picrossGridDataValue)) return(NULL)
     
     # Créer la grille de jeu Picross en utilisant la fonction do.call
-    picrossGrid <- do.call(tagList, lapply(1:input$gridSize, function(i) {
-      fluidRow(
-        column(width = 8, tagList(
-          lapply(1:input$gridSize, function(j) {
-            actionButton(
-              inputId = paste0("cell", i, j),
-              label = "",
-              class = "square-button",  # Ajouter la classe CSS
-              width = 50,
-              height = 50
-            )
-          })
-        )),
-        column(width = 2, align = "center", div(picrossGridDataValue$indices_lignes[i], class = "indices"))
-      )
-    }))
-    
-    # Ajouter une ligne avec les indices de colonnes
-    indices_colonnes <- do.call(fluidRow, lapply(1:input$gridSize, function(i) {
-      div(picrossGridDataValue$indices_colonnes[i], class = "indices")
+    picrossGrid <- do.call(tagList, lapply(1:(input$gridSize + 1), function(i) {
+      if (i == 1) {
+        return(fluidRow(column(width = 2), column(width = 8)))
+      } else {
+        fluidRow(
+          column(width = 2, align = "center"),
+          column(width = 8, tagList(
+            lapply(1:input$gridSize, function(j) {
+              actionButton(
+                inputId = paste0("cell", i - 1, j),
+                label = "",
+                class = "square-button",
+                width = 30,
+                height = 30
+              )
+            })
+          ))
+        )
+      }
     }))
     
     # Retourner la grille complète
-    tagList(picrossGrid, indices_colonnes)
+    picrossGrid
+  })
+  
+  # Afficher les indices des lignes
+  output$ligneIndices <- renderUI({
+    picrossGridDataValue <- picrossGridData()
+    
+    if (is.null(picrossGridDataValue)) return(NULL)
+    
+    indices_lignes <- apply(picrossGridDataValue$picrossMatrix, 1, obtenir_indices_ligne)
+    
+    # Créer les éléments HTML pour afficher les indices
+    indices_elements <- lapply(indices_lignes, function(indices) {
+      if (!is.null(indices)) {
+        paste(indices, collapse = " ")
+      } else {
+        ""
+      }
+    })
+    
+    # Afficher les indices dans une colonne
+    indices_column <- column(width = 2, align = "right", indices_elements)
+    
+    # Retourner la colonne des indices
+    indices_column
   })
   
   # Afficher la matrice de 0 et 1
