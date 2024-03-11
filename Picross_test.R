@@ -77,20 +77,25 @@ ui <- fluidPage(
         grid-column: 1 / span 1;
         grid-row: 1 / span 1;
         display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
         grid-template-rows: repeat(auto-fill, minmax(30px, 1fr));
         gap: 5px;
       }
       
-      .row-indices {
-        grid-row: span 1;
-        align-self: end;
+      .row-indices, .col-indices {
+        display: flex;
+        flex-wrap: wrap;
       }
       
-      .col-indices {
-        grid-row: span 1;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
-        gap: 5px;
+      .index-box {
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        text-align: center;
+        font-size: 12px;
+        font-weight: bold;
+        border: 1px solid #ddd;
+        background-color: #eee;
       }
       
       .grille {
@@ -116,35 +121,12 @@ server <- function(input, output) {
     
     if (is.null(picrossGridDataValue)) return(NULL)
     
-    indices_lignes <- apply(picrossGridDataValue$picrossMatrix, 1, obtenir_indices_ligne)
-    indices_colonnes <- apply(picrossGridDataValue$picrossMatrix, 2, obtenir_indices_colonne)
-    
-    indices_buttons_lignes <- lapply(1:length(indices_lignes), function(i) {
-      actionButton(
-        inputId = paste0("indiceLigne", i),
-        label = ifelse(length(indices_lignes[[i]]) > 0, paste(indices_lignes[[i]], collapse = " "), ""),
-        class = "square-button",
-        width = 30,
-        height = 30
-      )
-    })
-    
-    indices_buttons_colonnes <- lapply(1:length(indices_colonnes), function(i) {
-      actionButton(
-        inputId = paste0("indiceColonne", i),
-        label = ifelse(length(indices_colonnes[[i]]) > 0, paste(indices_colonnes[[i]], collapse = " "), ""),
-        class = "square-button",
-        width = 30,
-        height = 30
-      )
-    })
-    
     picrossGrid <- do.call(tagList, lapply(1:(input$gridSize + 1), function(i) {
       if (i == 1) {
         return(fluidRow(column(width = 2), column(width = 8)))
       } else {
         fluidRow(
-          column(width = 2, align = "center", indices_buttons_lignes[[i - 1]]),
+          column(width = 2, align = "center", div(id = paste0("indiceLigne", i - 1))),
           column(width = 8, tagList(
             lapply(1:input$gridSize, function(j) {
               actionButton(
@@ -164,7 +146,17 @@ server <- function(input, output) {
   })
   
   output$ligneIndices <- renderUI({
-    NULL
+    picrossGridDataValue <- picrossGridData()
+    
+    if (is.null(picrossGridDataValue)) return(NULL)
+    
+    indices_lignes <- apply(picrossGridDataValue$picrossMatrix, 1, obtenir_indices_ligne)
+    
+    indices_text_lignes <- lapply(1:length(indices_lignes), function(i) {
+      div(class = "index-box", ifelse(length(indices_lignes[[i]]) > 0, paste(indices_lignes[[i]], collapse = " "), ""))
+    })
+    
+    indices_text_lignes
   })
   
   output$colonneIndices <- renderUI({
@@ -174,17 +166,11 @@ server <- function(input, output) {
     
     indices_colonnes <- apply(picrossGridDataValue$picrossMatrix, 2, obtenir_indices_colonne)
     
-    indices_buttons_colonnes <- lapply(1:length(indices_colonnes), function(i) {
-      actionButton(
-        inputId = paste0("indiceColonne", i),
-        label = ifelse(length(indices_colonnes[[i]]) > 0, paste(indices_colonnes[[i]], collapse = " "), ""),
-        class = "square-button",
-        width = 30,
-        height = 30
-      )
+    indices_text_colonnes <- lapply(1:length(indices_colonnes), function(i) {
+      div(class = "index-box", ifelse(length(indices_colonnes[[i]]) > 0, paste(indices_colonnes[[i]], collapse = " "), ""))
     })
     
-    indices_buttons_colonnes
+    indices_text_colonnes
   })
   
   output$grille01 <- renderTable({
