@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyjs)
 
 generer_grille_aleatoire <- function(taille) {
   matrix(rbinom(taille^2, 1, 0.5), nrow = taille)
@@ -67,12 +68,12 @@ ui <- fluidPage(
         grid-template-rows: auto;
         gap: 10px;
       }
-      
+
       .grid {
         grid-column: 2 / span 1;
         grid-row: 1 / span 1;
       }
-      
+
       .indices {
         grid-column: 1 / span 1;
         grid-row: 1 / span 1;
@@ -81,12 +82,12 @@ ui <- fluidPage(
         grid-template-rows: repeat(auto-fill, minmax(30px, 1fr));
         gap: 5px;
       }
-      
+
       .row-indices, .col-indices {
         display: flex;
         flex-wrap: wrap;
       }
-      
+
       .index-box {
         width: 30px;
         height: 30px;
@@ -97,12 +98,49 @@ ui <- fluidPage(
         border: 1px solid #ddd;
         background-color: #eee;
       }
-      
+
       .grille {
         grid-column: 3 / span 1;
         grid-row: 1 / span 1;
       }
-    "))
+
+      .black-cell {
+        background-color: black !important;
+      }
+
+      .red-cell {
+        background-color: red !important;
+      }
+    ")),
+    tags$script(HTML('
+      var isMouseDown = false;
+      var isMouseOverCell = false;
+
+      $(document).on("mousedown", ".cell-button", function() {
+        isMouseDown = true;
+        $(this).toggleClass("maintain-selected-cell");
+      });
+
+      $(document).on("mouseup", function() {
+        isMouseDown = false;
+      });
+
+      $(document).on("mouseenter", ".cell-button", function() {
+        if (isMouseDown) {
+          $(this).toggleClass("maintain-selected-cell");
+        }
+      });
+
+      $(document).on("click", ".cell-button", function() {
+        var cellId = $(this).attr("id");
+        var cellValue = parseInt($(this).val());
+        if (cellValue === 1) {
+          $(this).toggleClass("black-cell");
+        } else if (cellValue === 0) {
+          $(this).toggleClass("red-cell");
+        }
+      });
+    '))
   )
 )
 
@@ -112,7 +150,8 @@ server <- function(input, output) {
   observeEvent(input$generateButton, {
     nouvelle_grille <- generer_grille_aleatoire(input$gridSize)
     picrossGridData(list(
-      picrossMatrix = nouvelle_grille
+      picrossMatrix = nouvelle_grille,
+      selectedCells = matrix(FALSE, nrow = input$gridSize, ncol = input$gridSize)
     ))
   })
   
@@ -121,26 +160,21 @@ server <- function(input, output) {
     
     if (is.null(picrossGridDataValue)) return(NULL)
     
-    picrossGrid <- do.call(tagList, lapply(1:(input$gridSize + 1), function(i) {
-      if (i == 1) {
-        return(fluidRow(column(width = 2), column(width = 8)))
-      } else {
-        fluidRow(
-          column(width = 2, align = "center", div(id = paste0("indiceLigne", i - 1))),
-          column(width = 8, tagList(
-            lapply(1:input$gridSize, function(j) {
-              actionButton(
-                inputId = paste0("cell", i - 1, j),
-                label = "",
-                class = "square-button",
-                width = 30,
-                height = 30
-              )
-            })
-          ))
+    picrossGrid <- tagList(
+      lapply(1:input$gridSize, function(i) {
+        div(
+          class = "cell-container",
+          lapply(1:input$gridSize, function(j) {
+            actionButton(
+              inputId = paste0("cell", i, j),
+              label = "",
+              class = c("square-button", "cell-button", ifelse(picrossGridDataValue$selectedCells[i, j], "selected-cell", "")),
+              value = picrossGridDataValue$picrossMatrix[i, j]
+            )
+          })
         )
-      }
-    }))
+      })
+    )
     
     picrossGrid
   })
@@ -181,6 +215,18 @@ server <- function(input, output) {
     grille01 <- picrossGridDataValue$picrossMatrix
     
     grille01
+  })
+  
+  observeEvent(input$picrossGrid, {
+    picrossGridDataValue <- picrossGridData()
+    
+    lapply(1:(input$gridSize), function(i) {
+      lapply(1:(input$gridSize), function(j) {
+        id <- paste0("cell", i, j)
+        shinyjs::runjs(sprintf('$("#%s").toggleClass("selected-cell", %s);', id, tolower(toJSON(input[[id]] %% 2 == 1))))
+        picrossGridDataValue$selectedCells[i, j] <- input[[id]] %% 2 == 1
+      })
+    })
   })
 }
 
