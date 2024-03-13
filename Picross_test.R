@@ -87,10 +87,17 @@ ui <- fluidPage(
         gap: 5px;
       }
 
-      .row-indices, .col-indices {
-        display: flex;
-        flex-wrap: wrap;
-      }
+      .row-indices {
+  display: flex;
+  flex-direction: column; /* Changement de l'orientation en colonne */
+  align-items: center; /* Alignement à droite, ajustez si nécessaire */
+}
+
+.col-indices {
+  display: flex;
+  flex-direction: column; /* Maintien de l'orientation en ligne pour les indices de colonne */
+  align-items: center; /* Alignement en bas, ajustez si nécessaire */
+}
 
       .index-box {
         width: 30px;
@@ -150,6 +157,10 @@ ui <- fluidPage(
     
   )
 )
+
+
+
+
 
 # Define the server logic
 server <- function(input, output) {
