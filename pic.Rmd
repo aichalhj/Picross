@@ -1,61 +1,88 @@
-
-library(shiny)
-
-ui <- fluidPage(
-  titlePanel("Picross Game"),
-  mainPanel(
-    tableOutput("picrossGrid"),
-    actionButton("checkButton", "Check Solution")
-  )
-)
-
-server <- function(input, output, session) {
-  # Taille du picross
-  rows <- 5
-  cols <- 5
-
-  # Génération d'une solution aléatoire
-  solution <- matrix(sample(c(0, 1), rows * cols, replace = TRUE), nrow = rows, ncol = cols)
-
-  # Tableau pour stocker l'état actuel du joueur
-  playerGrid <- reactiveVal(matrix(0, nrow = rows, ncol = cols))
-
-  # Affichage du picross
-  output$picrossGrid <- renderTable({
-    playerGrid()
-  }, bordered = TRUE)
-
-  # Mise à jour du tableau du joueur lorsqu'une case est cliquée
-  observeEvent(input$picrossGrid_cell_clicked, {
-    info <- input$picrossGrid_cell_clicked
-    i <- info$row
-    j <- info$col
-
-    currentGrid <- playerGrid()
-    currentGrid[i, j] <- 1 - currentGrid[i, j]  # Inversion 0/1
-    playerGrid(currentGrid)
-  })
-
-  # Vérification de la solution lorsque le bouton est cliqué
-  observeEvent(input$checkButton, {
-    if (identical(playerGrid(), solution)) {
-      showModal(
-        modalDialog(
-          title = "Félicitations!",
-          "Vous avez résolu le Picross avec succès.",
-          easyClose = TRUE
-        )
-      )
-    } else {
-      showModal(
-        modalDialog(
-          title = "Échec",
-          "La solution n'est pas correcte. Réessayez!",
-          easyClose = TRUE
-        )
-      )
+tags$head(
+  tags$style(HTML("
+    .square-button {
+      width: 30px;
+      height: 30px;
+      margin: 0px;
+      font-size: 8px;
     }
-  })
-}
 
-shinyApp(ui, server)
+    .grid-container {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;  /* Changement ici */
+      grid-template-rows: auto;
+      gap: 10px;
+    }
+
+    .grid {
+      grid-column: 1 / span 1;  /* Changement ici */
+      grid-row: 1 / span 1;
+    }
+
+    .indices {
+      grid-column: 2 / span 1;
+      grid-row: 1 / span 1;
+      display: grid;
+      grid-template-rows: repeat(auto-fill, minmax(30px, 1fr));
+      gap: 5px;
+    }
+
+    .row-indices, .col-indices {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .index-box {
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: bold;
+      border: 1px solid #ddd;
+      background-color: #eee;
+    }
+
+    .grille {
+      grid-column: 3 / span 1;
+      grid-row: 1 / span 1;
+    }
+
+    .black-cell {
+      background-color: black !important;
+    }
+
+    .red-cell {
+      background-color: red !important;
+    }
+  ")),
+  tags$script(HTML('
+    var isMouseDown = false;
+    var isMouseOverCell = false;
+
+    $(document).on("mousedown", ".cell-button", function() {
+      isMouseDown = true;
+      $(this).toggleClass("maintain-selected-cell");
+    });
+
+    $(document).on("mouseup", function() {
+      isMouseDown = false;
+    });
+
+    $(document).on("mouseenter", ".cell-button", function() {
+      if (isMouseDown) {
+        $(this).toggleClass("maintain-selected-cell");
+      }
+    });
+
+    $(document).on("click", ".cell-button", function() {
+      var cellId = $(this).attr("id");
+      var cellValue = parseInt($(this).val());
+      if (cellValue === 1) {
+        $(this).toggleClass("black-cell");
+      } else if (cellValue === 0) {
+        $(this).toggleClass("red-cell");
+      }
+    });
+  '))
+)
