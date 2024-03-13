@@ -119,34 +119,35 @@ ui <- fluidPage(
       }
     ")),
     tags$script(HTML('
-      var isMouseDown = false;
-      var isMouseOverCell = false;
+  var isMouseDown = false;
+  var isMouseOverCell = false;
 
-      $(document).on("mousedown", ".cell-button", function() {
-        isMouseDown = true;
-        $(this).toggleClass("maintain-selected-cell");
-      });
+  $(document).on("mousedown", ".cell-button", function() {
+    isMouseDown = true;
+    $(this).toggleClass("maintain-selected-cell");
+  });
 
-      $(document).on("mouseup", function() {
-        isMouseDown = false;
-      });
+  $(document).on("mouseup", function() {
+    isMouseDown = false;
+  });
 
-      $(document).on("mouseenter", ".cell-button", function() {
-        if (isMouseDown) {
-          $(this).toggleClass("maintain-selected-cell");
-        }
-      });
+  $(document).on("mouseenter", ".cell-button", function() {
+    if (isMouseDown) {
+      $(this).toggleClass("maintain-selected-cell");
+    }
+  });
 
-      $(document).on("click", ".cell-button", function() {
-        var cellId = $(this).attr("id");
-        var cellValue = parseInt($(this).val());
-        if (cellValue === 1) {
-          $(this).empty().append("&#10006;").toggleClass("black-cell");
-        } else if (cellValue === 0) {
-          $(this).toggleClass("cross-cell");
-        }
-      });
-    '))
+  $(document).on("click", ".cell-button", function() {
+    var cellId = $(this).attr("id");
+    var cellValue = parseInt($(this).val());
+    if (cellValue === 1) {
+      $(this).toggleClass("black-cell"); // Toggle black cell
+    } else if (cellValue === 0) {
+      $(this).empty().append("&#10006;").toggleClass("cross-cell");  // Add red cross
+    }
+  });
+'))
+    
   )
 )
 
