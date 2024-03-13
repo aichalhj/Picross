@@ -1,10 +1,12 @@
 library(shiny)
 library(shinyjs)
 
+# Function to generate a random grid
 generer_grille_aleatoire <- function(taille) {
   matrix(rbinom(taille^2, 1, 0.5), nrow = taille)
 }
 
+# Function to obtain row indices
 obtenir_indices_ligne <- function(ligne) {
   consecutive_ones <- rle(ligne)$lengths[rle(ligne)$values == 1]
   if (length(consecutive_ones) == 0) {
@@ -14,6 +16,7 @@ obtenir_indices_ligne <- function(ligne) {
   }
 }
 
+# Function to obtain column indices
 obtenir_indices_colonne <- function(colonne) {
   consecutive_ones <- rle(colonne)$lengths[rle(colonne)$values == 1]
   if (length(consecutive_ones) == 0) {
@@ -23,6 +26,7 @@ obtenir_indices_colonne <- function(colonne) {
   }
 }
 
+# Define the UI
 ui <- fluidPage(
   titlePanel("Picross Game"),
   
@@ -59,7 +63,7 @@ ui <- fluidPage(
         width: 30px;
         height: 30px;
         margin: 0px;
-        font-size: 8px;
+        font-size: 12px; /* Adjusted font size for better visibility */
       }
       
       .grid-container {
@@ -108,8 +112,10 @@ ui <- fluidPage(
         background-color: black !important;
       }
 
-      .red-cell {
-        background-color: red !important;
+      .cross-cell {
+        color: red;
+        font-size: 18px;
+        line-height: 30px;
       }
     ")),
     tags$script(HTML('
@@ -135,15 +141,16 @@ ui <- fluidPage(
         var cellId = $(this).attr("id");
         var cellValue = parseInt($(this).val());
         if (cellValue === 1) {
-          $(this).toggleClass("black-cell");
+          $(this).empty().append("&#10006;").toggleClass("black-cell");
         } else if (cellValue === 0) {
-          $(this).toggleClass("red-cell");
+          $(this).toggleClass("cross-cell");
         }
       });
     '))
   )
 )
 
+# Define the server logic
 server <- function(input, output) {
   picrossGridData <- reactiveVal(NULL)
   
@@ -230,4 +237,5 @@ server <- function(input, output) {
   })
 }
 
+# Run the application
 shinyApp(ui, server)
