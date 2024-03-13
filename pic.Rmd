@@ -53,7 +53,7 @@ tags$head(
     }
 
     .red-cell {
-      background-color: red !important;
+      background-color: yellow !important;
     }
   ")),
   tags$script(HTML('
