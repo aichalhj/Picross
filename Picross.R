@@ -37,18 +37,26 @@ ui <- fluidPage(
   div(
     class = "grid-container",
     div(
-      class = "grid", # La grille est maintenant dans la deuxième colonne
+      class = "indices",
+      div(
+        class = "row-indices",
+        uiOutput("ligneIndices")
+      ),
+      div(
+        class = "col-indices",
+        uiOutput("colonneIndices")
+      )
+    ),
+    div(
+      class = "grid",
       uiOutput("picrossGrid")
     ),
     div(
-      class = "row-indices", # Les indices de lignes sont dans la première colonne de la grille
-      uiOutput("ligneIndices")
-    ),
-    div(
-      class = "col-indices", # Les indices de colonnes sont dans la première ligne de la grille
-      uiOutput("colonneIndices")
+      class = "grille",
+      tableOutput("grille01")
     )
   ),
+  
   tags$head(
     tags$style(HTML("
       .square-button {
@@ -60,41 +68,30 @@ ui <- fluidPage(
       
       .grid-container {
         display: grid;
-        grid-template-columns: auto 1fr;
-        grid-template-rows: auto;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
         gap: 10px;
       }
 
       .grid {
-        grid-column: 2 / span 1;
-        grid-row: 1 / span 1;
+        grid-row: 3 / span 1;
       }
 
       .indices {
-              grid-column: 1 / span 1;
-              grid-row: 1 / span 1;
-              display: grid;
-              grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
-              grid-template-rows: repeat(auto-fill, minmax(30px, 1fr));
-              gap: 5px;
-            }
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+      }
 
       .row-indices {
-        grid-column: 1 / span 1; /* Les indices de lignes sont sur la première colonne */
-        grid-row: 1 / span 1;
         display: flex;
-        flex-direction: column;
-        align-items: center;
+        flex-direction: row;
       }
 
       .col-indices {
-        grid-column: 2 / span 1; /* Les indices de colonnes sont sur la première ligne */
-        grid-row: 1 / span 1;
         display: flex;
         flex-direction: row;
-        justify-content: center;
       }
-
 
       .index-box {
         width: 30px;
@@ -107,47 +104,51 @@ ui <- fluidPage(
         background-color: #eee;
       }
 
+      .grille {
+        grid-row: 2 / span 1;
+      }
+
       .black-cell {
         background-color: black !important;
       }
 
       .cross-cell {
-       color: red;
+        color: red;
         font-size: 18px;
         line-height: 30px;
       }
-    ")),
-    tags$script(HTML('
-  var isMouseDown = false;
-  var isMouseOverCell = false;
+    "))
+  ),
+  
+  tags$script(HTML('
+    var isMouseDown = false;
+    var isMouseOverCell = false;
 
-  $(document).on("mousedown", ".cell-button", function() {
-    isMouseDown = true;
-    $(this).toggleClass("maintain-selected-cell");
-  });
-
-  $(document).on("mouseup", function() {
-    isMouseDown = false;
-  });
-
-  $(document).on("mouseenter", ".cell-button", function() {
-    if (isMouseDown) {
+    $(document).on("mousedown", ".cell-button", function() {
+      isMouseDown = true;
       $(this).toggleClass("maintain-selected-cell");
-    }
-  });
+    });
 
-  $(document).on("click", ".cell-button", function() {
-    var cellId = $(this).attr("id");
-    var cellValue = parseInt($(this).val());
-    if (cellValue === 1) {
-      $(this).toggleClass("black-cell"); // Toggle black cell
-    } else if (cellValue === 0) {
-      $(this).empty().append("&#10006;").toggleClass("cross-cell");  // Add red cross
-    }
-  });
-'))
-    
-  )
+    $(document).on("mouseup", function() {
+      isMouseDown = false;
+    });
+
+    $(document).on("mouseenter", ".cell-button", function() {
+      if (isMouseDown) {
+        $(this).toggleClass("maintain-selected-cell");
+      }
+    });
+
+    $(document).on("click", ".cell-button", function() {
+      var cellId = $(this).attr("id");
+      var cellValue = parseInt($(this).val());
+      if (cellValue === 1) {
+        $(this).toggleClass("black-cell"); // Toggle black cell
+      } else if (cellValue === 0) {
+        $(this).empty().append("&#10006;").toggleClass("cross-cell");  // Add red cross
+      }
+    });
+  '))
 )
 
 # Define the server logic
@@ -155,10 +156,10 @@ server <- function(input, output) {
   picrossGridData <- reactiveVal(NULL)
   
   observeEvent(input$generateButton, {
-    nouvelle_grille <- generer_grille_aleatoire(input$gridSize)
+    nouvelle_grille <- generer_grille_aleatoire(input$gridSize + 1) # Taille + 1
     picrossGridData(list(
       picrossMatrix = nouvelle_grille,
-      selectedCells = matrix(FALSE, nrow = input$gridSize, ncol = input$gridSize)
+      selectedCells = matrix(FALSE, nrow = input$gridSize + 1, ncol = input$gridSize + 1) # Taille + 1
     ))
   })
   
@@ -168,10 +169,10 @@ server <- function(input, output) {
     if (is.null(picrossGridDataValue)) return(NULL)
     
     picrossGrid <- tagList(
-      lapply(1:input$gridSize, function(i) {
+      lapply(1:(input$gridSize + 1), function(i) { # Taille + 1
         div(
           class = "cell-container",
-          lapply(1:input$gridSize, function(j) {
+          lapply(1:(input$gridSize + 1), function(j) { # Taille + 1
             actionButton(
               inputId = paste0("cell", i, j),
               label = "",
@@ -191,7 +192,7 @@ server <- function(input, output) {
     
     if (is.null(picrossGridDataValue)) return(NULL)
     
-    indices_lignes <- apply(picrossGridDataValue$picrossMatrix, 1, obtenir_indices_ligne)
+    indices_lignes <- apply(picrossGridDataValue$picrossMatrix[-1, ], 1, obtenir_indices_ligne) # Exclure la première ligne
     
     indices_text_lignes <- lapply(1:length(indices_lignes), function(i) {
       div(class = "index-box", ifelse(length(indices_lignes[[i]]) > 0, paste(indices_lignes[[i]], collapse = " "), ""))
@@ -205,13 +206,37 @@ server <- function(input, output) {
     
     if (is.null(picrossGridDataValue)) return(NULL)
     
-    indices_colonnes <- apply(picrossGridDataValue$picrossMatrix, 2, obtenir_indices_colonne)
+    indices_colonnes <- apply(picrossGridDataValue$picrossMatrix[, -1], 2, obtenir_indices_colonne) # Exclure la première colonne
     
     indices_text_colonnes <- lapply(1:length(indices_colonnes), function(i) {
       div(class = "index-box", ifelse(length(indices_colonnes[[i]]) > 0, paste(indices_colonnes[[i]], collapse = " "), ""))
     })
     
     indices_text_colonnes
+  })
+  
+  
+  
+  output$grille01 <- renderTable({
+    picrossGridDataValue <- picrossGridData()
+    
+    if (is.null(picrossGridDataValue)) return(NULL)
+    
+    grille01 <- picrossGridDataValue$picrossMatrix
+    
+    grille01
+  })
+  
+  observeEvent(input$picrossGrid, {
+    picrossGridDataValue <- picrossGridData()
+    
+    lapply(1:(input$gridSize + 1), function(i) { # Taille + 1
+      lapply(1:(input$gridSize + 1), function(j) { # Taille + 1
+        id <- paste0("cell", i, j)
+        shinyjs::runjs(sprintf('$("#%s").toggleClass("selected-cell", %s);', id, tolower(toJSON(input[[id]] %% 2 == 1))))
+        picrossGridDataValue$selectedCells[i, j] <- input[[id]] %% 2 == 1
+      })
+    })
   })
 }
 

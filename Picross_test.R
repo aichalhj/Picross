@@ -226,6 +226,8 @@ server <- function(input, output) {
     indices_text_colonnes
   })
   
+  
+  
   output$grille01 <- renderTable({
     picrossGridDataValue <- picrossGridData()
     
