@@ -1,228 +1,168 @@
 library(shiny)
-library(shinythemes)
+library(shinyjs)
 
+# Function to generate a random grid
+generer_grille_aleatoire <- function(taille) {
+  matrix(rbinom(taille^2, 1, 0.5), nrow = taille)
+}
+
+# Function to obtain row indices
+obtenir_indices_ligne <- function(ligne) {
+  consecutive_ones <- rle(ligne)$lengths[rle(ligne)$values == 1]
+  if (length(consecutive_ones) == 0) {
+    return(NULL)
+  } else {
+    return(consecutive_ones)
+  }
+}
+
+# Function to obtain column indices
+obtenir_indices_colonne <- function(colonne) {
+  consecutive_ones <- rle(colonne)$lengths[rle(colonne)$values == 1]
+  if (length(consecutive_ones) == 0) {
+    return(NULL)
+  } else {
+    return(consecutive_ones)
+  }
+}
+
+# Define the UI
 ui <- fluidPage(
-  shinythemes::themeSelector(),
-  titlePanel("Grille Cliquable"),
-  sidebarLayout(
-    sidebarPanel(
-      tabsetPanel(
-        id = 'dataset',
-        tabPanel("Jeu", value = "jeu"),
-        tabPanel("Règles", value = "regles")
-      ),
-      conditionalPanel(
-        condition = 'input.dataset === "jeu"',
-        fluidRow(
-          selectInput(
-            inputId = "diff1",
-            label = "Difficulté:",
-            choices = c("Facile", "Normal", "Difficile", "Expert")
-          ),
-          br(),
-          sliderInput(
-            "taille",
-            "Taille:",
-            min = 5,
-            max = 20,
-            value = 5,
-            step = 1
-          ),
-          br(),
-          actionButton('replay', "Rejouer")
-        )
-      ),
-      conditionalPanel(
-        condition = 'input.dataset === "regles"',
-        h2("Règles du jeu:"),
-        hr(),
-        h5(
-          "Afin de résoudre des grilles de picross, il vous faut tout d'abord connaitre les règles du jeu. Une fois ces règles assimilées, des heures de jeu et de réflexion vous attendent !"
-        ),
-        h3("But du jeu:"),
-        h5(
-          "Le but d'un ",
-          strong("Picross"),
-          " est de noircir les cases de la grille afin de faire apparaître une image, un dessin. Les nombres à gauche et au-dessus de la grille sont là pour vous aider à déduire les cases à noircir."
-        ),
-        hr(),
-        h5(
-          "La séquence 3 2 signifie qu'il y a au moins une case vide entre une séquence de trois cases à noircir et une autre séquence de deux cases à noircir."
-        ),
-        img(
-          src = "./Images/rules_02.jpg",
-          width = 25,
-          height = 25
-        ),
-        br(),
-        h3('Passer en mode "hypothèse"'),
-        h5(
-          "Il se peut qu'à un moment donné vous soyez bloqué(e), vous ne savez plus quelles cases noircir. Vous pouvez alors passer en mode hypothèse. Ce mode modifie la couleur des cases que vous allez noircir et éliminer afin de facilement les repérer si vous vous trompez par la suite.
-Ce mode vous permet de partir d'une hypothèse afin de progresser dans la résolution du",
-          strong("Picross"),
-          "et de pouvoir revenir en arrière."
-        )
-      )
+  titlePanel("Picross Game"),
+  
+  sliderInput("gridSize", "Taille de la Grille", min = 5, max = 10, value = 5),
+  
+  actionButton("generateButton", "Générer une nouvelle grille"),
+  
+  fluidRow(
+    column(3, align = "center", 
+           uiOutput("rowIndicesTable")
     ),
-    mainPanel(tabsetPanel(
-      tabPanel("Jeu",
-               fluidRow(
-                 column(12,
-                        uiOutput("grid"),  # Utilisation de la fonction uiOutput pour afficher la grille
-                        verbatimTextOutput("cliquees_list"))
-               )),
-      tabPanel("Statistiques", "Il y aura les stats ici")
-    ))
+    column(6, align = "center", 
+           uiOutput("picrossGrid")
+    ),
+    column(3, align = "center", 
+           uiOutput("columnIndicesTable")
+    )
+  ),
+  
+  # Add CSS and JavaScript code...
+  
+  tags$head(
+    tags$style(HTML("
+      .square-button {
+        width: 30px;
+        height: 30px;
+        margin: 0px;
+        font-size: 12px; /* Adjusted font size for better visibility */
+      }
+      
+      .grid-container {
+        display: grid;
+        grid-template-columns: auto 2fr auto;
+        grid-template-rows: auto;
+        gap: 10px;
+      }
+
+      .row-indices {
+        grid-column: 1 / span 1;
+        grid-row: 1 / span 1;
+      }
+
+      .grid {
+        grid-column: 2 / span 1;
+        grid-row: 1 / span 1;
+      }
+
+      .column-indices {
+        grid-column: 3 / span 1;
+        grid-row: 1 / span 1;
+      }
+
+      .black-cell {
+        background-color: black !important;
+      }
+
+      .cross-cell {
+        color: red;
+        font-size: 18px;
+        line-height: 30px;
+      }
+    ")),
+    tags$script(HTML('
+      $(document).on("click", ".cell-button", function() {
+        if ($(this).hasClass("row-indices") || $(this).hasClass("column-indices")) {
+          return;  // Ignore clicks on row and column indices
+        }
+        
+        var cellId = $(this).attr("id");
+        var cellValue = parseInt($(this).val());
+        if (cellValue === 1) {
+          $(this).toggleClass("black-cell"); // Toggle black cell
+        } else if (cellValue === 0) {
+          $(this).empty().append("&#10006;").toggleClass("cross-cell");  // Add red cross
+        }
+      });
+    '))
   )
 )
 
-
+# Define the server logic
 server <- function(input, output) {
-  cases_cliquees <- reactiveVal(integer(0))
-  indices_cliques <- reactiveVal(list())
+  picrossGridData <- reactiveVal(NULL)
   
-  observe({
-    count1row<-function(row,M){
-      n <- dim(M)[1]
-      m <- floor(n/2 +1)
-      s=0
-      rep<-c()
-      for(j in 1:n){
-        if(M[row,j]==1){if(j==n){s=s+1
-        rep=c(rep,s)}
-          else{s=s+1}
-        }
-        if(M[row,j]==0){
-          if(s!=0){rep=c(rep,s)
-          s=0}
-        }
-      }
-      if(length(rep)==m){return(paste0(rep))}
-      else {
-        for(i in 1:(m-length(rep))){
-          rep<-c("",rep)
-        }
-        return(paste0(rep))
-      }
-    }
-    
-    
-    count1col<-function(col,M){
-      n<-dim(M)[1]
-      m<-floor(n/2 +1)
-      s=0
-      rep=c()
-      for(i in 1:n){
-        if(M[i,col]==1){if(i==n){s=s+1
-        rep=c(rep,s)}
-          else{s=s+1}
-        }
-        if(M[i,col]==0){
-          if(s!=0){rep=c(rep,s)
-          s=0}
-        }
-      }
-      if(length(rep)==m){return(paste0(rep))}
-      else {
-        for(i in 1:(m-length(rep))){
-          rep<-c("",rep)
-        }
-        return(paste0(rep))
-      }
-    }
-    
-    true_matrice <- picross_grid(input$taille, 0.5, 0.5)
-    decallage<-floor(input$taille/2)+1
-    taille<-input$taille+decallage
-    if (!is.null(input$taille)) {
-      output$grid <- renderUI({
-        valeurs <- c(1, 2, 3)
-        
-        grid <- matrix(
-          # Créer chaque case cliquable
-          lapply(1:(taille ^ 2), function(i) {
-            ligne <- floor((i - 1) / taille) + 1
-            colonne <- (i - 1) %% taille + 1
-            zone_morte <- ((ligne %in% 1:decallage && colonne %in% 1:decallage))
-            zone_ligne <- (ligne %in% (decallage+1):taille && colonne %in% 1:decallage)
-            id <- paste0("button_", ligne, "_", colonne)
-            zone_colonne <- (colonne %in% (decallage+1):taille && ligne %in% 1:decallage)
-            
-            actionButton(
-              inputId = id,
-              label = if(zone_ligne){count1row(ligne-decallage,true_matrice)[colonne]}
-              else {if(zone_colonne){count1col(colonne-decallage,true_matrice)[ligne]} else ""},
-              
-              # label = if(zone_ligne){valeurs[colonne]}
-              # else {if(zone_colonne){valeurs[ligne]} else ""},
-              style = if (id %in% indices_cliques()) {
-                "width: 25px; height: 25px; margin: 0px; padding:0px; background-color: black;"
-              } else {
-                if (((ligne %in% (decallage + 1):taille && colonne %in% 1:decallage) ||
-                     (ligne %in% 1:decallage && colonne %in% (decallage + 1):taille))) {
-                  "width: 25px; height: 25px; margin: 0px; padding: 0px; text-align: center; border: none;"
-                } else {
-                  if (zone_morte) {
-                    "width: 25px; height: 25px; margin: 0px; padding:0px; border: none;"
-                  } else "width: 25px; height: 25px; margin: 0px; padding:0px;"
-                }
-              }
-            )
-          }),
-          nrow = taille,
-          ncol = taille,
-          byrow = TRUE
-        )
-        
-        # Convertir la matrice en liste pour l'affichage
-        grid_list <- lapply(1:taille, function(i) {
-          fluidRow(do.call(tagList, grid[i, ]))
-        })
-        do.call(tagList, grid_list)
-      })
-      
-    }
-    modif_matrice <- function(i, j, val) {
-      if (!is.null(your_matrice)) {
-        mat <- your_matrice()
-        mat[i, j] <- val
-        your_matrice(mat)
-      }
-    }
-    your_matrice <-
-      reactiveVal(matrix(0, nrow = input$taille, ncol = input$taille))
-    lapply(3:(taille), function(i) {
-      lapply(1:(taille), function(j) {
-        observeEvent(input[[paste0("button_", i, "_", j)]], {
-          print(paste0(i-decallage, j-decallage))
-          #case<-
-          indices_cliques(c(indices_cliques(), paste0("button_", i, "_", j)))
-          modif_matrice(i-decallage, j-decallage, 1)
-          #print(typeof(your_matrice))
-          mat <- your_matrice()
-          print(mat)
-          print(true_matrice)
-          
-        })
-      })
-    })
+  observeEvent(input$generateButton, {
+    taille_grille <- input$gridSize
+    nouvelle_grille <- generer_grille_aleatoire(taille_grille)
+    indices_lignes <- apply(nouvelle_grille, 1, obtenir_indices_ligne)
+    indices_colonnes <- apply(nouvelle_grille, 2, obtenir_indices_colonne)
+    picrossGridData(list(
+      picrossMatrix = nouvelle_grille,
+      indicesLignes = indices_lignes,
+      indicesColonnes = indices_colonnes,
+      selectedCells = matrix(FALSE, nrow = input$gridSize, ncol = input$gridSize)
+    ))
   })
   
-  ## idée: créer une liste réactive, stocker les indices cliqués dedans, pour chaque indice cliqué dans la
-  ## liste on affecte la valeur 1 à your_matrice et le background-color black au boutton
-  #your_matrice<-reactiveVal(matrix(0,nrow = input$taille,ncol = input$taille))
+  output$rowIndicesTable <- renderTable({
+    picrossGridDataValue <- picrossGridData()
+    if (is.null(picrossGridDataValue)) return(NULL)
+    t(sapply(picrossGridDataValue$indicesLignes, function(indices) {
+      paste(indices, collapse = " ")
+    }))
+  })
   
+  output$columnIndicesTable <- renderTable({
+    picrossGridDataValue <- picrossGridData()
+    if (is.null(picrossGridDataValue)) return(NULL)
+    t(sapply(picrossGridDataValue$indicesColonnes, function(indices) {
+      paste(indices, collapse = " ")
+    }))
+  })
   
-  ## à la ligne decallage dans la colonne 1 on stocke la première valeur du vecteur count1row
-  ##                                      2 on stocke la deuxième valeur...
-  ## ainsi de suite jusqu'à la colonne decallage
-  ## --> traiter séparemment les lignes et les colonnes, par ex pour les lignes on peut accéder à la ligne
-  ## et attribuer la valeur numéro 'colonne' de count1row. Faire une "zone ligne" et une "zone colonne"
-  ## donc modifier count1row et count1col pour remplir le vecteur de "" de sorte à atteindre la taille decallage
-  ## zone_ligne <- (ligne %in% (decallage+1):taille && colonne %in% 1:decallage) 
-  ## zone_colonne <- (colonne %in% (decallage+1):taille && ligne %in% 1:decallage)
-  
-  
+  output$picrossGrid <- renderUI({
+    picrossGridDataValue <- picrossGridData()
+    if (is.null(picrossGridDataValue)) return(NULL)
+    
+    picrossGrid <- tagList(
+      lapply(1:input$gridSize, function(i) {
+        div(
+          class = "cell-container",
+          lapply(1:input$gridSize, function(j) {
+            actionButton(
+              inputId = paste0("cell", i, j),
+              label = "",
+              class = c("square-button", "cell-button", ifelse(picrossGridDataValue$selectedCells[i, j], "selected-cell", "")),
+              value = picrossGridDataValue$picrossMatrix[i, j]
+            )
+          })
+        )
+      })
+    )
+    
+    picrossGrid
+  })
 }
 
+# Run the application
 shinyApp(ui, server)
