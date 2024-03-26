@@ -1,15 +1,9 @@
 library(shiny)
 library(shinyjs)
 
-<<<<<<< HEAD
-# Function to generate a random grid
-generer_grille_aleatoire <- function(taille) {
-  matrix(rbinom(taille^2, 1, 0.5), nrow = taille)
-=======
 # Function to generate a random grid with specified probability
 generer_grille_aleatoire <- function(taille, p) {
   matrix(rbinom(taille^2, 1, p), nrow = taille)
->>>>>>> afbb0c03a37e4ec1aa1403702dc9c909d228d2ff
 }
 
 # Function to obtain row indices
@@ -36,27 +30,6 @@ obtenir_indices_colonne <- function(colonne) {
 ui <- fluidPage(
   titlePanel("Picross Game"),
   
-<<<<<<< HEAD
-  sliderInput("gridSize", "Taille de la Grille", min = 5, max = 10, value = 5),
-  
-  actionButton("generateButton", "Générer une nouvelle grille"),
-  
-  div(
-    class = "grid-container",
-    div(
-      class = "grid", # La grille est maintenant dans la deuxième colonne
-      uiOutput("picrossGrid")
-    ),
-    div(
-      class = "row-indices", # Les indices de lignes sont dans la première colonne de la grille
-      uiOutput("ligneIndices")
-    ),
-    div(
-      class = "col-indices", # Les indices de colonnes sont dans la première ligne de la grille
-      uiOutput("colonneIndices")
-    )
-  ),
-=======
   selectInput("gridSize", "Taille de la Grille",
               choices = c(5, 6, 7, 8, 9, 10),  # Options de taille de grille
               selected = 5),  # Taille de grille par défaut
@@ -82,7 +55,6 @@ ui <- fluidPage(
   
   # Add CSS and JavaScript code...
   
->>>>>>> afbb0c03a37e4ec1aa1403702dc9c909d228d2ff
   tags$head(
     tags$style(HTML("
       .square-button {
@@ -94,69 +66,24 @@ ui <- fluidPage(
       
       .grid-container {
         display: grid;
-<<<<<<< HEAD
-        grid-template-columns: auto 1fr;
-=======
         grid-template-columns: auto 2fr auto;
->>>>>>> afbb0c03a37e4ec1aa1403702dc9c909d228d2ff
         grid-template-rows: auto;
         gap: 10px;
       }
 
-<<<<<<< HEAD
-=======
       .row-indices {
         grid-column: 1 / span 1;
         grid-row: 1 / span 1;
       }
 
->>>>>>> afbb0c03a37e4ec1aa1403702dc9c909d228d2ff
       .grid {
         grid-column: 2 / span 1;
         grid-row: 1 / span 1;
       }
 
-<<<<<<< HEAD
-      .indices {
-              grid-column: 1 / span 1;
-              grid-row: 1 / span 1;
-              display: grid;
-              grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
-              grid-template-rows: repeat(auto-fill, minmax(30px, 1fr));
-              gap: 5px;
-            }
-
-      .row-indices {
-        grid-column: 1 / span 1; /* Les indices de lignes sont sur la première colonne */
-        grid-row: 1 / span 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .col-indices {
-        grid-column: 2 / span 1; /* Les indices de colonnes sont sur la première ligne */
-        grid-row: 1 / span 1;
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-      }
-
-
-      .index-box {
-        width: 30px;
-        height: 30px;
-        line-height: 30px;
-        text-align: center;
-        font-size: 12px;
-        font-weight: bold;
-        border: 1px solid #ddd;
-        background-color: #eee;
-=======
       .column-indices {
         grid-column: 3 / span 1;
         grid-row: 1 / span 1;
->>>>>>> afbb0c03a37e4ec1aa1403702dc9c909d228d2ff
       }
 
       .black-cell {
@@ -164,117 +91,12 @@ ui <- fluidPage(
       }
 
       .cross-cell {
-<<<<<<< HEAD
-       color: red;
-=======
         color: red;
->>>>>>> afbb0c03a37e4ec1aa1403702dc9c909d228d2ff
         font-size: 18px;
         line-height: 30px;
       }
     ")),
     tags$script(HTML('
-<<<<<<< HEAD
-  var isMouseDown = false;
-  var isMouseOverCell = false;
-
-  $(document).on("mousedown", ".cell-button", function() {
-    isMouseDown = true;
-    $(this).toggleClass("maintain-selected-cell");
-  });
-
-  $(document).on("mouseup", function() {
-    isMouseDown = false;
-  });
-
-  $(document).on("mouseenter", ".cell-button", function() {
-    if (isMouseDown) {
-      $(this).toggleClass("maintain-selected-cell");
-    }
-  });
-
-  $(document).on("click", ".cell-button", function() {
-    var cellId = $(this).attr("id");
-    var cellValue = parseInt($(this).val());
-    if (cellValue === 1) {
-      $(this).toggleClass("black-cell"); // Toggle black cell
-    } else if (cellValue === 0) {
-      $(this).empty().append("&#10006;").toggleClass("cross-cell");  // Add red cross
-    }
-  });
-'))
-    
-  )
-)
-
-# Define the server logic
-server <- function(input, output) {
-  picrossGridData <- reactiveVal(NULL)
-  
-  observeEvent(input$generateButton, {
-    nouvelle_grille <- generer_grille_aleatoire(input$gridSize)
-    picrossGridData(list(
-      picrossMatrix = nouvelle_grille,
-      selectedCells = matrix(FALSE, nrow = input$gridSize, ncol = input$gridSize)
-    ))
-  })
-  
-  output$picrossGrid <- renderUI({
-    picrossGridDataValue <- picrossGridData()
-    
-    if (is.null(picrossGridDataValue)) return(NULL)
-    
-    picrossGrid <- tagList(
-      lapply(1:input$gridSize, function(i) {
-        div(
-          class = "cell-container",
-          lapply(1:input$gridSize, function(j) {
-            actionButton(
-              inputId = paste0("cell", i, j),
-              label = "",
-              class = c("square-button", "cell-button", ifelse(picrossGridDataValue$selectedCells[i, j], "selected-cell", "")),
-              value = picrossGridDataValue$picrossMatrix[i, j]
-            )
-          })
-        )
-      })
-    )
-    
-    picrossGrid
-  })
-  
-  output$ligneIndices <- renderUI({
-    picrossGridDataValue <- picrossGridData()
-    
-    if (is.null(picrossGridDataValue)) return(NULL)
-    
-    indices_lignes <- apply(picrossGridDataValue$picrossMatrix, 1, obtenir_indices_ligne)
-    
-    indices_text_lignes <- lapply(1:length(indices_lignes), function(i) {
-      div(class = "index-box", ifelse(length(indices_lignes[[i]]) > 0, paste(indices_lignes[[i]], collapse = " "), ""))
-    })
-    
-    indices_text_lignes
-  })
-  
-  output$colonneIndices <- renderUI({
-    picrossGridDataValue <- picrossGridData()
-    
-    if (is.null(picrossGridDataValue)) return(NULL)
-    
-    indices_colonnes <- apply(picrossGridDataValue$picrossMatrix, 2, obtenir_indices_colonne)
-    
-    indices_text_colonnes <- lapply(1:length(indices_colonnes), function(i) {
-      div(class = "index-box", ifelse(length(indices_colonnes[[i]]) > 0, paste(indices_colonnes[[i]], collapse = " "), ""))
-    })
-    
-    indices_text_colonnes
-  })
-}
-
-# Run the application
-shinyApp(ui, server)
-=======
   $(document).on("click", ".cell-button", function() {
     if ($(this).hasClass("row-indices") || $(this).hasClass("column-indices")) {
       return;  // Ignore clicks on row and column indices
@@ -433,9 +255,3 @@ server <- function(input, output) {
 }
 
 shinyApp(ui, server)
-
-
-
-
-
->>>>>>> afbb0c03a37e4ec1aa1403702dc9c909d228d2ff
