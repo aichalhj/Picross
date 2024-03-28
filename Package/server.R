@@ -1,16 +1,21 @@
+# server.R
 
+# Import des bibliothèques nécessaires
+library(shiny)
+library(shinyjs)
 
-#' Define the server logic
-#' @param input Input values
-#' @param output Output values
+# Import des fonctions définies dans functions.R
+source("functions.R")
+
+# Import du contenu de ui.R
+source("ui.R")
+
+# Définition de la fonction server
 server <- function(input, output) {
   
-  picrossGridData <- reactiveVal(NULL)
-  userGrid <- reactiveVal(matrix(0, nrow = 5, ncol = 5))  # Initialisation de userGrid
-  
+  # Logique du serveur pour générer une nouvelle grille
   observeEvent(input$generateButton, {
     taille_grille <- as.numeric(input$gridSize)
-    
     niveau_difficulte <- input$difficultyLevel
     
     # Déterminez la probabilité en fonction du niveau de difficulté
@@ -19,24 +24,27 @@ server <- function(input, output) {
     } else if (niveau_difficulte == "Moyen") {
       0.5
     } else {                                   # Niveau de difficulté "Difficile"
-      print("Difficile")  # Vérifier si cette partie est atteinte
       0.7
     }
     
     randomGrid <- generer_grille_aleatoire(taille_grille, p)
     indices_lignes <- apply(randomGrid, 1, obtenir_indices_ligne)
     indices_colonnes <- apply(randomGrid, 2, obtenir_indices_colonne)
-    picrossGridData(list(
+    
+    picrossGridData <- list(
       picrossMatrix = randomGrid,
       indicesLignes = indices_lignes,
       indicesColonnes = indices_colonnes
-    ))
-    print(randomGrid)
+    )
     
-    # Mettre à jour la taille de userGrid pour qu'elle corresponde à randomGrid
-    userGrid(matrix(0, nrow = taille_grille, ncol = taille_grille))
+    # Mettre à jour la grille de l'utilisateur
+    userGrid <- matrix(0, nrow = taille_grille, ncol = taille_grille)
+    
+    # Mettre à jour l'interface utilisateur avec les nouvelles données de la grille
+    update_ui(picrossGridData, userGrid)
   })
   
+  # Logique du serveur pour vérifier la solution
   observeEvent(input$checkSolutionButton, {
     picrossGridDataValue <- picrossGridData()
     if (is.null(picrossGridDataValue)) {
@@ -62,46 +70,7 @@ server <- function(input, output) {
     }
   })
   
-  output$rowIndicesTable <- renderTable({
-    picrossGridDataValue <- picrossGridData()
-    if (is.null(picrossGridDataValue)) return(NULL)
-    t(sapply(picrossGridDataValue$indicesLignes, function(indices) {
-      paste(indices, collapse = " ")
-    }))
-  })
-  
-  output$columnIndicesTable <- renderTable({
-    picrossGridDataValue <- picrossGridData()
-    if (is.null(picrossGridDataValue)) return(NULL)
-    t(sapply(picrossGridDataValue$indicesColonnes, function(indices) {
-      paste(indices, collapse = " ")
-    }))
-  })
-  
-  output$picrossGrid <- renderUI({
-    picrossGridDataValue <- picrossGridData()
-    if (is.null(picrossGridDataValue)) return(NULL)
-    
-    picrossGrid <- tagList(
-      lapply(1:input$gridSize, function(i) {
-        div(
-          class = "cell-container",
-          lapply(1:input$gridSize, function(j) {
-            actionButton(
-              inputId = paste0("cell", i, j),
-              label = "",
-              class = c("square-button", "cell-button"),
-              value = picrossGridDataValue$picrossMatrix[i, j],
-              onclick = paste("Shiny.setInputValue('selected_cell', {row: ", i, ", col: ", j, "});")
-            )
-          })
-        )
-      })
-    )
-    
-    picrossGrid
-  })
-  
+  # Logique du serveur pour mettre à jour les données utilisateur lorsqu'une cellule est sélectionnée
   observeEvent(input$selected_cell, {
     selected_cell <- input$selected_cell
     userGridValue <- userGrid()
@@ -109,10 +78,41 @@ server <- function(input, output) {
     userGrid(userGridValue)
   })
   
-  observe({
-    userGridValue <- userGrid()
-    print(userGridValue)  # Mettre à jour la matrice userGrid dans la console à chaque changement dans la grille de boutons
-  })
+  # Fonction pour mettre à jour l'interface utilisateur avec les données de la grille
+  update_ui <- function(picrossGridData, userGrid) {
+    output$rowIndicesTable <- renderTable({
+      t(sapply(picrossGridData$indicesLignes, function(indices) {
+        paste(indices, collapse = " ")
+      }))
+    })
+    
+    output$columnIndicesTable <- renderTable({
+      t(sapply(picrossGridData$indicesColonnes, function(indices) {
+        paste(indices, collapse = " ")
+      }))
+    })
+    
+    output$picrossGrid <- renderUI({
+      picrossGrid <- tagList(
+        lapply(1:input$gridSize, function(i) {
+          div(
+            class = "cell-container",
+            lapply(1:input$gridSize, function(j) {
+              actionButton(
+                inputId = paste0("cell", i, j),
+                label = "",
+                class = c("square-button", "cell-button"),
+                value = picrossGridData$picrossMatrix[i, j],
+                onclick = paste("Shiny.setInputValue('selected_cell', {row: ", i, ", col: ", j, "});")
+              )
+            })
+          )
+        })
+      )
+      
+      picrossGrid
+    })
+  }
 }
 
-shinyApp(ui, server)
+shinyApp(ui = ui, server = server)
