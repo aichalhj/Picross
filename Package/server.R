@@ -2,7 +2,7 @@
 
 # Import des bibliothèques nécessaires
 library(shiny)
-library(shinyjs)
+
 
 # Import des fonctions définies dans functions.R
 source("functions.R")
