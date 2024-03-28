@@ -1,33 +1,29 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 
-library(shiny)
-
-# Define UI for application that draws a histogram
-fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
-        )
+#' Define the UI
+#' @return UI object
+ui <- fluidPage(
+  titlePanel("Picross Game"),
+  
+  selectInput("gridSize", "Taille de la Grille",
+              choices = c(5, 6, 7, 8, 9, 10),  # Options de taille de grille
+              selected = 5),  # Taille de grille par défaut
+  
+  selectInput("difficultyLevel", "Niveau de difficulté",
+              choices = c("Facile", "Moyen", "Difficile"),
+              selected = "Facile"),
+  
+  actionButton("generateButton", "Générer une nouvelle grille"),
+  actionButton("checkSolutionButton", "Vérifier la solution"),
+  
+  fluidRow(
+    column(3, align = "center", 
+           uiOutput("rowIndicesTable")
+    ),
+    column(6, align = "center", 
+           uiOutput("picrossGrid")
+    ),
+    column(3, align = "center", 
+           uiOutput("columnIndicesTable")
     )
+  )
 )
