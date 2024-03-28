@@ -1,6 +1,8 @@
 
 #' Define the UI
 #' @return UI object
+library(shiny)
+library(shinyjs)
 ui <- fluidPage(
   titlePanel("Picross Game"),
   
