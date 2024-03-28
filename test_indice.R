@@ -73,8 +73,7 @@ ui <- fluidPage(
 
       .row-indices {
         grid-column: 1 / span 1;
-        grid-row: 2 / span 1; /* Déplacez les indices de ligne en dessous de la grille */
-        text-align: right; /* Alignement à gauche */
+        grid-row: 1 / span 1;
       }
 
       .grid {
@@ -83,9 +82,8 @@ ui <- fluidPage(
       }
 
       .column-indices {
-        grid-column: 1 / span 1; /* Centrage des indices de colonne */
+        grid-column: 3 / span 1;
         grid-row: 1 / span 1;
-        text-align: center; /* Alignement au centre */
       }
 
       .black-cell {
