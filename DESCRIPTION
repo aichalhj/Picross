@@ -1,0 +1,11 @@
+Package: Picross
+Title: Picross Game - A Shiny Application
+Version: 0.1.0
+Authors@R: 
+    person("Majda HAMOMI", "Aicha LAHJOUJ", ))
+Description: Une application Shiny pour jouer au jeu Picross..
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
