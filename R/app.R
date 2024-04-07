@@ -3,7 +3,7 @@ packageVersion("roxygen2")#' Jeu de Picross Shiny
 #' Cet ensemble de fonctions et d'interface Shiny permet de jouer au jeu de Picross.
 #'
 #' @import shiny
-#' @import shinyjs
+
 #' @importFrom stats rbinom
 #' @importFrom base matrix nrow ncol
 #'
@@ -287,5 +287,7 @@ server <- function(input, output) {
 #'
 #' Cette fonction lance l'application Shiny pour le jeu de Picross.
 #'
+#' @name shinyApp
 #' @export
 shinyApp(ui, server)
+
