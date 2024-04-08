@@ -3,7 +3,7 @@
 \docType{data}
 \name{ui}
 \alias{ui}
-\title{UI pour le jeu de Picross}
+\title{UI}
 \format{
 An object of class \code{shiny.tag.list} (inherits from \code{list}) of length 4.
 }
@@ -11,6 +11,8 @@ An object of class \code{shiny.tag.list} (inherits from \code{list}) of length 4
 ui
 }
 \description{
+UI pour le jeu de Picross
+
 Cette fonction définit l'interface utilisateur (UI) pour le jeu de Picross en utilisant Shiny.
 }
 \keyword{datasets}

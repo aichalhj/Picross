@@ -2,10 +2,12 @@
 % Please edit documentation in R/app.R
 \name{server}
 \alias{server}
-\title{Logique serveur pour le jeu de Picross}
+\title{server}
 \usage{
 server(input, output)
 }
 \description{
+Logique serveur pour le jeu de Picross
+
 Cette fonction définit la logique serveur pour le jeu de Picross en utilisant Shiny.
 }

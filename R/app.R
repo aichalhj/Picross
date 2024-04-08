@@ -1,81 +1,14 @@
-packageVersion("roxygen2")#' Jeu de Picross Shiny
-#'
-#' Cet ensemble de fonctions et d'interface Shiny permet de jouer au jeu de Picross.
-#'
-#' @import shiny
+packageVersion("roxygen2")
 
-#' @importFrom stats rbinom
-#' @importFrom base matrix nrow ncol
-#'
-#' @export
-generer_grille_aleatoire <- function(taille, p) {
-  matrix(rbinom(taille^2, 1, p), nrow = taille)
-}
-
-#' Obtient les indices de ligne contigus
-#'
-#' Cette fonction obtient les indices des lignes contigus dans une matrice.
-#'
-#' @param ligne Vecteur de la ligne à analyser
-#' @return Indices des lignes contigus
-#' @export
-obtenir_indices_ligne <- function(ligne) {
-  consecutive_ones <- rle(ligne)$lengths[rle(ligne)$values == 1]
-  if (length(consecutive_ones) == 0) {
-    return(NULL)
-  } else {
-    return(consecutive_ones)
-  }
-}
-
-#' Obtient les indices de colonne contigus
-#'
-#' Cette fonction obtient les indices des colonnes contigus dans une matrice.
-#'
-#' @param colonne Vecteur de la colonne à analyser
-#' @return Indices des colonnes contigus
-#' @export
-obtenir_indices_colonne <- function(colonne) {
-  consecutive_ones <- rle(colonne)$lengths[rle(colonne)$values == 1]
-  if (length(consecutive_ones) == 0) {
-    return(NULL)
-  } else {
-    return(consecutive_ones)
-  }
-}
-
-#' Compare deux matrices
-#'
-#' Cette fonction compare deux matrices et retourne une matrice de comparaison.
-#'
-#' @param mat1 Première matrice à comparer
-#' @param mat2 Deuxième matrice à comparer
-#' @return Matrice de comparaison
-#' @export
-compare_matrices <- function(mat1, mat2) {
-  if (!identical(dim(mat1), dim(mat2))) {
-    stop("Les dimensions des matrices ne correspondent pas.")
-  }
-
-  rows <- nrow(mat1)
-  cols <- ncol(mat1)
-
-  comparison <- matrix(NA, nrow = rows, ncol = cols)
-
-  for (i in 1:rows) {
-    for (j in 1:cols) {
-      comparison[i, j] <- ifelse(mat1[i, j] == mat2[i, j], TRUE, FALSE)
-    }
-  }
-
-  return(comparison)
-}
-
-#' UI pour le jeu de Picross
+#' @title UI
+#' @description UI pour le jeu de Picross
 #'
 #' Cette fonction définit l'interface utilisateur (UI) pour le jeu de Picross en utilisant Shiny.
 #'
+#' @import shiny
+#' @import shinyjs
 #' @export
+
 ui <- fluidPage(
   titlePanel("Picross Game"),
 
@@ -166,11 +99,15 @@ ui <- fluidPage(
   )
 )
 
+#' @title server
+#' @description
 #' Logique serveur pour le jeu de Picross
 #'
 #' Cette fonction définit la logique serveur pour le jeu de Picross en utilisant Shiny.
-#'
+#' @import shiny
+#' @import shinyjs
 #' @export
+
 server <- function(input, output) {
 
   picrossGridData <- reactiveVal(NULL)
@@ -283,11 +220,8 @@ server <- function(input, output) {
   })
 }
 
-#' Lancer l'application Shiny
-#'
-#' Cette fonction lance l'application Shiny pour le jeu de Picross.
-#'
-#' @name shinyApp
-#' @export
-shinyApp(ui, server)
+
+play <- function() {
+  shinyApp(ui, server)
+  }
 
