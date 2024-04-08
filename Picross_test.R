@@ -1,20 +1,12 @@
 library(shiny)
 library(shinyjs)
 
-<<<<<<< HEAD
 # Définir la fonction pour générer une grille aléatoire 
-=======
-# Function to generate a random grid
->>>>>>> 173e24881721c7b43f286137799c95344e9f61a9
 generer_grille_aleatoire <- function(taille) {
   matrix(rbinom(taille^2, 1, 0.5), nrow = taille)
 }
 
-<<<<<<< HEAD
 # Fonctions pour obtenir les indices de ligne et de colonne
-=======
-# Function to obtain row indices
->>>>>>> 173e24881721c7b43f286137799c95344e9f61a9
 obtenir_indices_ligne <- function(ligne) {
   consecutive_ones <- rle(ligne)$lengths[rle(ligne)$values == 1]
   if (length(consecutive_ones) == 0) {
@@ -24,7 +16,6 @@ obtenir_indices_ligne <- function(ligne) {
   }
 }
 
-# Function to obtain column indices
 obtenir_indices_colonne <- function(colonne) {
   consecutive_ones <- rle(colonne)$lengths[rle(colonne)$values == 1]
   if (length(consecutive_ones) == 0) {
@@ -34,11 +25,7 @@ obtenir_indices_colonne <- function(colonne) {
   }
 }
 
-<<<<<<< HEAD
 # Définir l'interface utilisateur (UI)
-=======
-# Define the UI
->>>>>>> 173e24881721c7b43f286137799c95344e9f61a9
 ui <- fluidPage(
   titlePanel("Jeu Picross"),
   
@@ -58,26 +45,19 @@ ui <- fluidPage(
     )
   ),
   
+  
   tags$head(
     tags$style(HTML("
       .square-button {
         width: 30px;
         height: 30px;
         margin: 0px;
-<<<<<<< HEAD
         font-size: 12px; /* Taille de la police ajustée pour une meilleure visibilité */
-=======
-        font-size: 12px; /* Adjusted font size for better visibility */
->>>>>>> 173e24881721c7b43f286137799c95344e9f61a9
       }
       
       .grid-container {
         display: grid;
-<<<<<<< HEAD
         grid-template-columns: auto 2fr auto;
-=======
-        grid-template-columns: 2fr 1fr 1fr;
->>>>>>> 173e24881721c7b43f286137799c95344e9f61a9
         grid-template-rows: auto;
         gap: 10px;
       }
@@ -92,43 +72,7 @@ ui <- fluidPage(
         grid-row: 1 / span 1;
       }
 
-<<<<<<< HEAD
       .column-indices {
-=======
-      .indices {
-        grid-column: 1 / span 1;
-        grid-row: 1 / span 1;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
-        grid-template-rows: repeat(auto-fill, minmax(30px, 1fr));
-        gap: 5px;
-      }
-
-      .row-indices {
-  display: flex;
-  flex-direction: column; /* Changement de l'orientation en colonne */
-  align-items: center; /* Alignement à droite, ajustez si nécessaire */
-}
-
-.col-indices {
-  display: flex;
-  flex-direction: column; /* Maintien de l'orientation en ligne pour les indices de colonne */
-  align-items: center; /* Alignement en bas, ajustez si nécessaire */
-}
-
-      .index-box {
-        width: 30px;
-        height: 30px;
-        line-height: 30px;
-        text-align: center;
-        font-size: 12px;
-        font-weight: bold;
-        border: 1px solid #ddd;
-        background-color: #eee;
-      }
-
-      .grille {
->>>>>>> 173e24881721c7b43f286137799c95344e9f61a9
         grid-column: 3 / span 1;
         grid-row: 1 / span 1;
       }
@@ -144,7 +88,6 @@ ui <- fluidPage(
       }
     ")),
     tags$script(HTML('
-<<<<<<< HEAD
       $(document).on("click", ".cell-button", function() {
         if ($(this).hasClass("row-indices") || $(this).hasClass("column-indices")) {
           return;  // Ignorer les clics sur les indices de ligne et de colonne
@@ -159,45 +102,9 @@ ui <- fluidPage(
         }
       });
     '))
-=======
-  var isMouseDown = false;
-  var isMouseOverCell = false;
-
-  $(document).on("mousedown", ".cell-button", function() {
-    isMouseDown = true;
-    $(this).toggleClass("maintain-selected-cell");
-  });
-
-  $(document).on("mouseup", function() {
-    isMouseDown = false;
-  });
-
-  $(document).on("mouseenter", ".cell-button", function() {
-    if (isMouseDown) {
-      $(this).toggleClass("maintain-selected-cell");
-    }
-  });
-
-  $(document).on("click", ".cell-button", function() {
-    var cellId = $(this).attr("id");
-    var cellValue = parseInt($(this).val());
-    if (cellValue === 1) {
-      $(this).toggleClass("black-cell"); // Toggle black cell
-    } else if (cellValue === 0) {
-      $(this).empty().append("&#10006;").toggleClass("cross-cell");  // Add red cross
-    }
-  });
-'))
-    
->>>>>>> 173e24881721c7b43f286137799c95344e9f61a9
   )
 )
 
-
-
-
-
-# Define the server logic
 server <- function(input, output) {
   picrossGridData <- reactiveVal(NULL)
   coefficient <- reactiveVal(NULL)  # Variable réactive pour stocker le coefficient
@@ -284,9 +191,5 @@ server <- function(input, output) {
   })
 }
 
-<<<<<<< HEAD
 # Exécuter l'application
-=======
-# Run the application
->>>>>>> 173e24881721c7b43f286137799c95344e9f61a9
 shinyApp(ui, server)

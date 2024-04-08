@@ -53,8 +53,6 @@ ui <- fluidPage(
     )
   ),
   
-  # Add CSS and JavaScript code...
-  
   tags$head(
     tags$style(HTML("
       .square-button {
@@ -117,105 +115,66 @@ ui <- fluidPage(
   )
 )
 
-
-
-compare_matrices <- function(mat1, mat2) {
-  if (!identical(dim(mat1), dim(mat2))) {
-    stop("Les dimensions des matrices ne correspondent pas.")
-  }
-  
-  rows <- nrow(mat1)
-  cols <- ncol(mat1)
-  
-  comparison <- matrix(NA, nrow = rows, ncol = cols)
-  
-  for (i in 1:rows) {
-    for (j in 1:cols) {
-      comparison[i, j] <- ifelse(mat1[i, j] == mat2[i, j], TRUE, FALSE)
-    }
-  }
-  
-  return(comparison)
-}
-
+# Define the server logic
 server <- function(input, output, session) {
   
   picrossGridData <- reactiveVal(NULL)
-  userGrid <- reactiveVal(matrix(0, nrow = 5, ncol = 5))  # Initialisation de userGrid
+  userGrid <- reactiveVal(NULL)  # Pas besoin d'initialiser userGrid
   
-  observe({
-    # Début de l'observeEvent pour le bouton de génération
-    observeEvent(input$generateButton, {
-      taille_grille <- as.numeric(input$gridSize)
-      
-      # Calculer le coefficient pour augmenter la taille de userGrid
-      coef <- ceiling(taille_grille / 2)
-      
-      # Augmenter la taille de userGrid
-      userGrid(matrix(0, nrow = taille_grille + coef, ncol = taille_grille + coef))
-      
-      niveau_difficulte <- input$difficultyLevel
-      
-      # Déterminez la probabilité en fonction du niveau de difficulté
-      p <- if (niveau_difficulte == "Facile") {
-        0.3
-      } else if (niveau_difficulte == "Moyen") {
-        0.5
-      } else {                                   # Niveau de difficulté "Difficile"
-        print("Difficile")  # Vérifier si cette partie est atteinte
-        0.7
-      }
-      
-      randomGrid <- generer_grille_aleatoire(taille_grille, p)
-      indices_lignes <- apply(randomGrid, 1, obtenir_indices_ligne)
-      indices_colonnes <- apply(randomGrid, 2, obtenir_indices_colonne)
-      picrossGridData(list(
-        picrossMatrix = randomGrid,
-        indicesLignes = indices_lignes,
-        indicesColonnes = indices_colonnes
+  observeEvent(input$generateButton, {
+    taille_grille <- as.numeric(input$gridSize)
+    
+    niveau_difficulte <- input$difficultyLevel
+    
+    # Déterminez la probabilité en fonction du niveau de difficulté
+    p <- if (niveau_difficulte == "Facile") {
+      0.3
+    } else if (niveau_difficulte == "Moyen") {
+      0.5
+    } else {                                   # Niveau de difficulté "Difficile"
+      print("Difficile")  # Vérifier si cette partie est atteinte
+      0.7
+    }
+    
+    randomGrid <- generer_grille_aleatoire(taille_grille, p)
+    indices_lignes <- apply(randomGrid, 1, obtenir_indices_ligne)
+    indices_colonnes <- apply(randomGrid, 2, obtenir_indices_colonne)
+    picrossGridData(list(
+      picrossMatrix = randomGrid,
+      indicesLignes = indices_lignes,
+      indicesColonnes = indices_colonnes
+    ))
+    print(randomGrid)
+    
+    # Mettre à jour la taille de userGrid pour qu'elle corresponde à randomGrid + coef
+    userGrid(matrix(0, nrow = taille_grille + ceiling(taille_grille / 2), ncol = taille_grille))
+  })
+  print(userGrid)
+  
+  observeEvent(input$checkSolutionButton, {
+    picrossGridDataValue <- picrossGridData()
+    if (is.null(picrossGridDataValue)) {
+      showModal(modalDialog(
+        title = "Erreur",
+        "Veuillez générer une grille aléatoire avant de vérifier la solution."
       ))
-      print(randomGrid)
-      
-      # Mettre à jour la taille de userGrid pour qu'elle corresponde à randomGrid
-      userGrid(matrix(0, nrow = taille_grille + coef, ncol = taille_grille + coef))
-    }) # Fin de l'observeEvent pour le bouton de génération
+      return()
+    }
     
-    # Début de l'observeEvent pour le bouton de vérification de la solution
-    observeEvent(input$checkSolutionButton, {
-      picrossGridDataValue <- picrossGridData()
-      if (is.null(picrossGridDataValue)) {
-        showModal(modalDialog(
-          title = "Erreur",
-          "Veuillez générer une grille aléatoire avant de vérifier la solution."
-        ))
-        return()
-      }
-      
-      randomGrid <- picrossGridDataValue$picrossMatrix
-      userGridValue <- userGrid()
-      if (nrow(userGridValue) != nrow(randomGrid) || ncol(userGridValue) != ncol(randomGrid)) {
-        showModal(modalDialog(
-          title = "Erreur",
-          "La taille de votre grille ne correspond pas à la grille aléatoire générée. Veuillez générer une nouvelle grille."
-        ))
-        return()
-      }
-      
-      comparison_result <- compare_matrices(userGridValue, randomGrid)
-      if (all(comparison_result)) {
-        showModal(modalDialog(
-          title = "Bravo !",
-          "Votre solution est correcte !"
-        ))
-      } else {
-        showModal(modalDialog(
-          title = "Réessayer",
-          "Désolé, votre solution n'est pas correcte. Veuillez réessayer."
-        ))
-      }
-    }) # Fin de l'observeEvent pour le bouton de vérification de la solution
-    
-  }) # Fin de l'observe globale
+    randomGrid <- picrossGridDataValue$picrossMatrix
+    comparison_result <- compare_matrices(userGrid(), randomGrid)
+    if (all(comparison_result)) {
+      showModal(modalDialog(
+        title = "Bravo !",
+        "Votre solution est correcte !"
+      ))
+    } else {
+      showModal(modalDialog(
+        title = "Réessayer",
+        "Désolé, votre solution n'est pas correcte. Veuillez réessayer."
+      ))
+    }
+  })
   
   output$rowIndicesTable <- renderTable({
     picrossGridDataValue <- picrossGridData()
@@ -238,38 +197,28 @@ server <- function(input, output, session) {
     if (is.null(picrossGridDataValue)) return(NULL)
     
     taille_grille <- as.numeric(input$gridSize)
-    coef <- ceiling(taille_grille / 2)
-    
-    # Transformer les indices des colonnes pour faciliter leur affichage
-    indicesColonnes <- lapply(1:length(picrossGridDataValue$indicesColonnes), function(j) {
-      paste(picrossGridDataValue$indicesColonnes[[j]], collapse = " ")
-    })
+    coef <- ceiling(taille_grille / 2)  # Coefficient de grossissement
     
     picrossGrid <- tagList(
       lapply(1:(taille_grille + coef), function(i) {
         div(
           class = "cell-container",
           lapply(1:(taille_grille + coef), function(j) {
-            if (i > coef && j > coef) {
-              # Boutons de la grille
+            if (i <= coef || j <= coef) {  # Ajouter des boutons vides aux emplacements ajoutés
               actionButton(
                 inputId = paste0("cell", i, j),
                 label = "",
                 class = c("square-button", "cell-button"),
-                value = ifelse(i <= taille_grille && j <= taille_grille, picrossGridDataValue$picrossMatrix[i - coef, j - coef], 0),
-                onclick = paste("Shiny.setInputValue('selected_cell', {row: ", i - coef, ", col: ", j - coef, "});")
-              )
-            } else if (i <= coef && j > coef && j <= (taille_grille + coef)) {
-              # Affichage des indices des colonnes
-              # Assurez-vous que les indices sont bien alignés avec leur colonne respective.
-              div(
-                class = "column-index",
-                ifelse(i == coef, indicesColonnes[[j - coef]], ""), # Affiche l'indice de la colonne juste au-dessus de la première rangée de boutons
-                style = "text-align: center;" # Assure un alignement centré des indices
+                onclick = paste("Shiny.setInputValue('selected_cell', {row: ", i, ", col: ", j, "});")
               )
             } else {
-              # Espaces vides ou autres éléments au-dessus des indices et à gauche des boutons
-              div(class = "empty-cell", "")
+              actionButton(  # Utilisez les valeurs de la grille picross pour les autres cellules
+                inputId = paste0("cell", i, j),
+                label = "",
+                class = c("square-button", "cell-button"),
+                value = picrossGridDataValue$picrossMatrix[i - coef, j - coef],
+                onclick = paste("Shiny.setInputValue('selected_cell', {row: ", i, ", col: ", j, "});")
+              )
             }
           })
         )
@@ -279,20 +228,7 @@ server <- function(input, output, session) {
     picrossGrid
   })
   
-  observeEvent(input$selected_cell, {
-    selected_cell <- input$selected_cell
-    userGridValue <- userGrid()
-    if (selected_cell$row <= nrow(userGridValue) && selected_cell$col <= ncol(userGridValue)) { # Vérification des indices
-      userGridValue[selected_cell$row, selected_cell$col] <- 1
-      userGrid(userGridValue)
-    }
-  })
   
-  observe({
-    userGridValue <- userGrid()
-    print(userGridValue)  # Mettre à jour la matrice userGrid dans la console à chaque changement dans la grille de boutons
-  })
 }
 
 shinyApp(ui, server)
-
