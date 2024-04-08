@@ -283,9 +283,9 @@ server <- function(input, output) {
   })
 }
 
-<<<<<<< HEAD:Picross.R
+
 shinyApp(ui, server)
-=======
+
 #' Lancer l'application Shiny
 #'
 #' Cette fonction lance l'application Shiny pour le jeu de Picross.
@@ -294,4 +294,4 @@ shinyApp(ui, server)
 #' @export
 shinyApp(ui, server)
 
->>>>>>> b1ce961a8dc07914dbf9c8d322f14130ef18e82a:R/app.R
+
