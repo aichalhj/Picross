@@ -56,7 +56,13 @@ ui <- fluidPage(
     )
   ),
   
-  # Add CSS and JavaScript code...
+  fluidRow(
+    column(12, align = "center",
+           h3("Règles du jeu Picross"),
+           p("Picross est un jeu de puzzle logique dans lequel vous devez remplir les cases d'une grille pour révéler une image. Les indices donnés pour chaque ligne et colonne indiquent le nombre de cases noires contiguës dans cette ligne ou colonne, dans l'ordre. Il doit y avoir au moins une case blanche entre deux groupes de cases noires."),
+           p("Utilisez les boutons de la grille pour remplir les cases. Cliquez sur une case vide pour la remplir en noir")
+    )
+  ),
   
   tags$head(
     tags$style(HTML("
