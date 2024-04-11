@@ -13,8 +13,8 @@ ui <- fluidPage(
   titlePanel("Picross Game"),
 
   selectInput("gridSize", "Taille de la Grille",
-              choices = c(5, 6, 7, 8, 9, 10),
-              selected = 5),
+              choices = c(5, 6, 7, 8, 9, 10),  # Options de taille de grille
+              selected = 5),  # Taille de grille par défaut
 
   selectInput("difficultyLevel", "Niveau de difficulté",
               choices = c("Facile", "Moyen", "Difficile"),
@@ -25,17 +25,25 @@ ui <- fluidPage(
 
   fluidRow(
     column(3, align = "center",
+           h3("Indices pour les lignes"),
            uiOutput("rowIndicesTable")
     ),
     column(6, align = "center",
            uiOutput("picrossGrid")
     ),
     column(3, align = "center",
+           h3("Indices pour les colonnes"),
            uiOutput("columnIndicesTable")
     )
   ),
 
-  # Add CSS and JavaScript code...
+  fluidRow(
+    column(12, align = "center",
+           h3("Règles du jeu Picross"),
+           p("Picross est un jeu de puzzle logique dans lequel vous devez remplir les cases d'une grille pour révéler une image. Les indices donnés pour chaque ligne et colonne indiquent le nombre de cases noires contiguës dans cette ligne ou colonne, dans l'ordre. Il doit y avoir au moins une case blanche entre deux groupes de cases noires."),
+           p("Utilisez les boutons de la grille pour remplir les cases. Cliquez sur une case vide pour la remplir en noir")
+    )
+  ),
 
   tags$head(
     tags$style(HTML("
@@ -98,6 +106,7 @@ ui <- fluidPage(
 '))
   )
 )
+
 
 #' @title server
 #' @description
@@ -221,7 +230,5 @@ server <- function(input, output) {
 }
 
 
-play <- function() {
-  shinyApp(ui, server)
-  }
+play <- function (){shinyApp(ui, server)}
 
