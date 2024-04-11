@@ -28,6 +28,10 @@ puis
 Picross::play()
 ```
 
+# Auteurs
+Majda HAMOMI
+Aïcha LAHJIOUJ
+
 
 devtools::load_all()
 
