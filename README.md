@@ -11,15 +11,8 @@ Le Picross, également connu sous le nom de nonogramme, est un jeu de puzzle jap
 L'installation du package peut se faire directement depuis GitHub:
 
 ```
-install.packages("remotes")
-remotes::install_github("https://github.com/aichalhj/Picross")
-```
-
-ou bien avec
-
-```
-install.packages("remotes")
-remotes::install_github("https://github.com/aichalhj/Picross")
+install.packages("devtools")
+devtools::install_github("https://github.com/aichalhj/Picross")
 ```
 
 puis 
