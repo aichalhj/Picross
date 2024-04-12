@@ -25,7 +25,3 @@ Picross::play()
 Majda HAMOMI
 Aïcha LAHJIOUJ
 
-
-devtools::load_all()
-
-play()
